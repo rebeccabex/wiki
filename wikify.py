@@ -91,5 +91,6 @@ for pageTitle in pageTitles:
     wikiPage = open(filepath + "/" + pageTitle + ".html", "w")
     htmlPage = parsePage(textPage)
     wikiPage.write(htmlPage)
+    wikiPage.close()
 
 
