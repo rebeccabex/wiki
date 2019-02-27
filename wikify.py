@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import os
 
 filepath = os.getcwd()
@@ -76,21 +77,31 @@ def parsePage(page):
     htmlFile += "\n</body>\n</html>"
     return htmlFile
 
-linksPage = open(filepath + "/links.txt", "w")
-
 pageTitles = [
     "Helvina",
     "Eldanan Empire"
 ]
 
-for pageTitle in pageTitles:
-    f = open(filepath + "/" + pageTitle + ".txt")
+def getLinks(filename):
+    with open(filename, "r") as linksPage:
+        return json.load(linksPage)
 
-    textPage = f.read()
+def writeLinks(linksDict, filename):
+    with open(filename, "w") as linksPage:
+        json.dump(linksDict, linksPage, indent=4, sort_keys=True)
 
-    wikiPage = open(filepath + "/" + pageTitle + ".html", "w")
-    htmlPage = parsePage(textPage)
-    wikiPage.write(htmlPage)
-    wikiPage.close()
+if __name__ == "__main__":
+    linksDict = getLinks(filepath + "/links.json")
 
+    for pageTitle in pageTitles:
+        f = open(filepath + "/" + pageTitle + ".txt")
+
+        textPage = f.read()
+
+        wikiPage = open(filepath + "/" + pageTitle + ".html", "w")
+        htmlPage = parsePage(textPage)
+        wikiPage.write(htmlPage)
+        wikiPage.close()
+
+    writeLinks(linksDict, filepath + "/links.json")
 
