@@ -4,18 +4,10 @@ import os
 
 filepath = os.getcwd()
 
-links = {
-  "The Millennium Empire_novel": "The Millennium Empire",
-  "The Millennium Empire_place": "Eldanan Empire",
-  "Helvina": "Helvina",
-  "Farida": "Farida",
-  "Hegedar": "Hegedar",
-  "Egafsir": "Egafsir",
-  "Eldana": "Eldanan Empire"
-}
+linksDict = {}
 
 def makeLink(tag):
-    return "<a href=\"%s.html\">%s</a>" % (links.get(tag, tag), tag if tag.find("_") == -1 else tag[:tag.find("_")])
+    return "<a href=\"%s.html\">%s</a>" % (linksDict.get(tag, tag), tag if tag.find("_") == -1 else tag[:tag.find("_")])
 
 def convertLinks(page):
     convertedPage = ""
@@ -53,7 +45,7 @@ def parseHeader(header):
             parameter = parameterAndValue[0]
             value = parameterAndValue[1]
             if (value.find("[") != -1):
-                valueList = value[1:-1].split(",")
+                valueList = [val.strip() for val in value[1:-1].split(",")]
             if parameter == "Title":
                 headerData["Title"] = value
             elif parameter == "Tags":
@@ -61,6 +53,19 @@ def parseHeader(header):
             elif parameter == "Categories":
                 headerData["Categories"] = valueList
     return headerData
+
+def isTagAlreadyUsed(tag, title):
+    return tag in linksDict and linksDict[tag] != title
+
+def addTagsToLinksCollection(tags, title):
+    for tag in tags:
+        if isTagAlreadyUsed(tag, title):
+            print(
+                "Tag \"%s\" is already used by \"%s\", so cannot be used by \"%s\""
+                % (tag, linksDict[tag], title)
+            )
+        else:
+            linksDict[tag] = title
 
 def parseBody(body):
     return convertLinks(body)
@@ -71,6 +76,7 @@ def parsePage(page):
     header = headerBody[0]
     body = headerBody[1]
     headerData = parseHeader(header)
+    addTagsToLinksCollection(headerData["Tags"], headerData["Title"])
     htmlFile += headerData.get("Title", "")
     htmlFile += "</title>\n</head>\n<body>\n"
     htmlFile += parseBody(body)
