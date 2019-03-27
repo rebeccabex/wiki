@@ -4,10 +4,11 @@ import os
 
 filepath = os.getcwd()
 
-linksDict = {}
+links = {}
+pages = {}
 
 def makeLink(tag):
-    return "<a href=\"%s.html\">%s</a>" % (linksDict.get(tag, tag), tag if tag.find("_") == -1 else tag[:tag.find("_")])
+    return "<a href=\"%s.html\">%s</a>" % (links.get(tag, tag), tag if tag.find("_") == -1 else tag[:tag.find("_")])
 
 def convertLinks(page):
     convertedPage = ""
@@ -55,33 +56,41 @@ def parseHeader(header):
     return headerData
 
 def isTagAlreadyUsed(tag, title):
-    return tag in linksDict and linksDict[tag] != title
+    return tag in links and links[tag] != title
 
 def addTagsToLinksCollection(tags, title):
     for tag in tags:
         if isTagAlreadyUsed(tag, title):
             print(
                 "Tag \"%s\" is already used by \"%s\", so cannot be used by \"%s\""
-                % (tag, linksDict[tag], title)
+                % (tag, links[tag], title)
             )
         else:
-            linksDict[tag] = title
+            links[tag] = title
 
 def parseBody(body):
     return convertLinks(body)
 
-def parsePage(page):
+def parsePage(pageTitle, pageInformation):
     htmlFile = "<!DOCTYPE html>\n<html>\n<head>\n<title>"
+    htmlFile += pageTitle
+    htmlFile += "</title>\n</head>\n<body>\n"
+    htmlFile += "<h3>%s</h3>" % (pageTitle)
+    htmlFile += parseBody(pageInformation.get("Body", ""))
+    htmlFile += "\n</body>\n</html>"
+    return htmlFile
+
+def addPageToDictionary(page):
     headerBody = splitPage(page)
     header = headerBody[0]
     body = headerBody[1]
     headerData = parseHeader(header)
+    pages[headerData["Title"]] = {
+        "Tags": headerData["Tags"],
+        "Categories": headerData["Categories"],
+        "Body": body
+    }
     addTagsToLinksCollection(headerData["Tags"], headerData["Title"])
-    htmlFile += headerData.get("Title", "")
-    htmlFile += "</title>\n</head>\n<body>\n"
-    htmlFile += parseBody(body)
-    htmlFile += "\n</body>\n</html>"
-    return htmlFile
 
 pageTitles = [
     "Helvina",
@@ -97,17 +106,19 @@ def writeLinks(linksDict, filename):
         json.dump(linksDict, linksPage, indent=4, sort_keys=True)
 
 if __name__ == "__main__":
-    linksDict = getLinks(filepath + "/links.json")
+    links = getLinks(filepath + "/links.json")
 
     for pageTitle in pageTitles:
         f = open(filepath + "/" + pageTitle + ".txt")
 
         textPage = f.read()
+        addPageToDictionary(textPage)
 
+    for pageTitle, pageInformation in pages.items():
         wikiPage = open(filepath + "/" + pageTitle + ".html", "w")
-        htmlPage = parsePage(textPage)
+
+        htmlPage = parsePage(pageTitle, pageInformation)
         wikiPage.write(htmlPage)
         wikiPage.close()
 
-    writeLinks(linksDict, filepath + "/links.json")
-
+    writeLinks(links, filepath + "/links.json")
